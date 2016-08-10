@@ -1,5 +1,8 @@
-from PIL import Image, ImageTk
-import tkinter as tk
+import cv2
+import random
+import numpy as np
+
+cv2.startWindowThread()
 
 index = []
 stack = []
@@ -13,48 +16,55 @@ stop = False
 
 
 def stackAdd(x, y):
-    if x > 0 and y > 0 and x < im.width and y < im.height:
+    if x > 2 and y > 2 and x < height - 1 and y < width - 1:
         if index[x][y] == 0:
-            # pixels[y * img.width + x] = (255, 255, 0)
-            imf.putpixel((x, y), (255, 255, 0))
+            imf[x, y] = [255, 255, 0]
             stack.append([x, y])
 
-im = Image.open("data/vector-world-map-v2.2-blank.png")
+im = cv2.imread('data/vector-world-map-v2.2-blank.png')
+im = cv2.resize(im, (0, 0), fx=0.2, fy=0.2)
 imf = im.copy()
 
-root = tk.Tk()
-canvas = tk.Canvas(root, width=5501, height=3270)
-canvas.pack()
+height, width, nothing = im.shape
 
-#root.mainloop()
+index = [[0 for y in range(width + 2)] for x in range(height + 2)]
 
-index = [[0 for y in range(im.height + 2)] for x in range(im.width + 2)]
+framecounter = 0
 
 while stop == False:
+
+    if framecounter % 1500 == 0:
+        cv2.imshow('', imf)
+        cv2.waitKey(1)
+
+    framecounter += 1
 
     if recursion == False:
 
         if index[x][y] == 0:
+
+            # visited node
             index[x][y] = 1
-            # imgfinal.pixels[y * img.width + x] = color(0, 0, 255)
-            # pixels[y * img.width + x] = color(0, 0, 255)
-            imf.putpixel((x, y), (0, 0, 255))
+            imf[x, y] = [0, 0, 255]
 
-            if im.getpixel((x, y)) == (0, 0, 0):
-
-                # imgfinal.pixels[y * img.width + x] = color(255, 0, 0)
-                # pixels[y * img.width + x] = color(255, 0, 0)
-                imf.putpixel((x, y), (255, 0, 0))
-
-                index[x][y] = 0
-                stackAdd(x, y)
+            if np.array_equal(im[x, y], [0, 0, 0]):
+                imf[x, y] = [255, 0, 0]
                 recursion = True
 
-        x += 1
-        if x == im.width - 2:
-            x = 0
-            y += 1
-            if y == im.height - 2:
+                stackAdd(x - 1, y - 1)
+                stackAdd(x - 1, y)
+                stackAdd(x - 1, y + 1)
+                stackAdd(x, y - 1)
+                stackAdd(x, y + 1)
+                stackAdd(x + 1, y - 1)
+                stackAdd(x + 1, y)
+                stackAdd(x + 1, y + 1)
+
+        y += 1
+        if y > width - 2:
+            y = 0
+            x += 1
+            if x > height - 2:
                 stop = True
     else:
 
@@ -62,19 +72,13 @@ while stop == False:
             point = stack.pop()
 
             if index[point[0]][point[1]] == 0:
+
                 index[point[0]][point[1]] = 1
-                # imgfinal.pixels[y * img.width + x] = color(0, 0, 255)
-                # pixels[y * img.width + x] = color(0, 0, 255)
-                imf.putpixel((x, y), (0, 0, 255))
+                imf[point[0], point[1]] = [0, 0, 255]
 
-                # print(str(point[0]) + " - " + str(point[1]) + "#" +
-                # str(im.width) + " - " + str(im.height))
+                if np.array_equal(im[point[0], point[1]], [0, 0, 0]):
 
-                if im.getpixel((point[0], point[1])) == (0, 0, 0):
-
-                    # imgfinal.pixels[point[1] * img.width + point[0]] = color(255, 0, 0)
-                    # pixels[point[1] * img.width + point[0]] = color(255, 0, 0)
-                    imf.putpixel((x, y), (255, 0, 0))
+                    imf[point[0], point[1]] = [255, 0, 0]
 
                     stackAdd(point[0] - 1, point[1] - 1)
                     stackAdd(point[0] - 1, point[1])
@@ -87,12 +91,10 @@ while stop == False:
 
         else:
             recursion = False
+            print("bitch - "+str(islandcounter)+" - "+str(x)+" - "+str(y))
+
+
             islandcounter += 1
 
-    tk_img = ImageTk.PhotoImage(imf)
-    canvas.create_image(imf.width/2, imf.height/2, image=tk_img)
-    root.update_idletasks()
-    root.update()
-
-#imf.show()
-print(islandcounter);
+#cv2.waitKey(0)
+print(islandcounter)
